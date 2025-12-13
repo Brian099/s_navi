@@ -18,15 +18,15 @@ $: # 匹配所有分支
               exports:
                 info: TAG_NAME # 导出为环境变量 TAG_NAME
 
-            # 任务 1.2: 生成 Release 描述 (优化：修正时区为 UTC+8)
+            # 任务 1.2: 生成 Release 描述 (最终优化：使用 TZ='UTC-8' 修正时区)
             - name: Generate Release Description
               script: |
-                # 使用 TZ='Asia/Shanghai' 确保时间为北京时间 (UTC+8)
-                BUILD_TIME=$(TZ='Asia/Shanghai' date "+%Y-%m-%d %H:%M:%S")
+                # 使用 TZ='UTC-8' 确保时间为 UTC+8，与北京时间一致
+                BUILD_TIME=$(TZ='UTC-8' date "+%Y-%m-%d %H:%M:%S")
                 
-                # 确保每一行单独输出，避免 -e 被打印
+                # 确保每一行单独输出
                 echo "### 🚀 Auto-Build Release"
-                echo "" # 确保Markdown格式中的空行
+                echo "" 
                 echo "- **Branch**: ${CNB_BRANCH}"
                 echo "- **Build Time**: ${BUILD_TIME}"
               exports:
