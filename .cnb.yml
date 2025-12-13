@@ -18,14 +18,17 @@ $: # 匹配所有分支
               exports:
                 info: TAG_NAME # 导出为环境变量 TAG_NAME
 
-            # 任务 1.2: 生成 Release 描述 (优化：移除 -e 和无效变量)
+            # 任务 1.2: 生成 Release 描述 (优化：修正时区为 UTC+8)
             - name: Generate Release Description
               script: |
+                # 使用 TZ='Asia/Shanghai' 确保时间为北京时间 (UTC+8)
+                BUILD_TIME=$(TZ='Asia/Shanghai' date "+%Y-%m-%d %H:%M:%S")
+                
                 # 确保每一行单独输出，避免 -e 被打印
                 echo "### 🚀 Auto-Build Release"
                 echo "" # 确保Markdown格式中的空行
                 echo "- **Branch**: ${CNB_BRANCH}"
-                echo "- **Build Time**: $(date "+%Y-%m-%d %H:%M:%S")"
+                echo "- **Build Time**: ${BUILD_TIME}"
               exports:
                 info: TAG_DESCRIPTION
 
@@ -47,7 +50,7 @@ $: # 匹配所有分支
                 # 将信息性输出重定向到 stderr，不影响变量捕获
                 echo "Release 制品已创建: $TAR_FILENAME" >&2
                 
-                # 4. 最终输出：将文件路径输出到 stdout 的最后一行，exports 将自动捕获它
+                # 4. 最终输出：将文件路径输出到 stdout 的最后一行
                 echo "$TAR_FILENAME" 
               exports:
                 info: CNB_RELEASE_FILE_PATH # 导出文件路径变量
