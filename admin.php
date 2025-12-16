@@ -65,10 +65,7 @@ if (!isset($_SESSION['admin'])) {
     <!doctype html>
     <html lang="zh-CN">
     <head><meta charset="utf-8"><title>管理登录</title><link rel="stylesheet" href="assets/style.css"></head>
-    <body class="admin-login" style="
-			background: linear-gradient(-45deg, #6b1db5, #000000, #9f054e, #8a2be2);
-            background-size: 200% 200%;
-            animation: gradientBG 15s ease infinite;">
+    <body class="admin-login">
       <div class="login-box">
         <h2>后台登录</h2>
         <?php if (!empty($err)) echo "<p class='error'>".htmlspecialchars($err)."</p>"; ?>
@@ -101,10 +98,7 @@ usort($services, function($a,$b){
   <title>导航管理</title>
   <link rel="stylesheet" href="assets/style.css">
 </head>
-<body style="
-			background: linear-gradient(-45deg, #6b1db5, #000000, #9f054e, #8a2be2);
-            background-size: 200% 200%;
-            animation: gradientBG 15s ease infinite;">
+<body>
   <header class="topbar admin-top">
     <div class="brand"><h1>导航管理</h1></div>
     <div><a href="index.php" target="_blank">查看前台</a> | <a href="?logout=1">登出</a></div>
