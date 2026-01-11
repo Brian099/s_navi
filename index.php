@@ -142,19 +142,5 @@ $bodyCSS = getBodyCSS();
   </footer>
 
   <script src="assets/app.js"></script>
-  <script>
-    // 点击卡片，根据模式打开对应链接
-    document.querySelectorAll('.card').forEach(card=>{
-      card.addEventListener('click', ()=>{
-        const mode = localStorage.getItem('nav_mode') || 'v6';
-        const url = card.dataset[mode];
-        if (!url) {
-          alert('此服务尚未填写对应链接');
-          return;
-        }
-        window.open(url, '_blank');
-      });
-    });
-  </script>
 </body>
 </html>
