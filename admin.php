@@ -86,6 +86,10 @@ $raw = file_get_contents($dataFile);
 $services = json_decode($raw, true);
 if (!is_array($services)) $services = [];
 usort($services, function($a,$b){
+    $ha = ($a['show_home'] ?? 0) ? 1 : 0;
+    $hb = ($b['show_home'] ?? 0) ? 1 : 0;
+    if ($ha !== $hb) return $hb <=> $ha;
+
     $sa = $a['sort_order'] ?? 0; $sb = $b['sort_order'] ?? 0;
     if ($sa === $sb) return ($a['id'] ?? 0) <=> ($b['id'] ?? 0);
     return $sa <=> $sb;
@@ -106,9 +110,20 @@ usort($services, function($a,$b){
 
   <main class="container admin">
     <section class="admin-actions">
-      <div>
-        <button id="btn-new" class="primary">新增服务</button>
-        <button id="save-order-btn">保存排序</button>
+      <div class="admin-toolbar">
+        <div class="admin-toolbar-left">
+          <button id="btn-new" class="primary">新增服务</button>
+          <button id="save-order-btn">保存布局</button>
+        </div>
+        <div class="admin-toolbar-right">
+          <input id="admin-search" class="admin-search" type="search" placeholder="搜索服务…" autocomplete="off">
+          <select id="admin-page-size" class="admin-page-size">
+            <option value="10">10/页</option>
+            <option value="20" selected>20/页</option>
+            <option value="50">50/页</option>
+            <option value="100">100/页</option>
+          </select>
+        </div>
       </div>
       <p class="muted">注：拖拽表格行改变排序,点击状态可切换启用/停用</p>
     </section>
@@ -123,6 +138,7 @@ usort($services, function($a,$b){
           <th>v6</th>
           <th>v4</th>
           <th>局域网</th>
+          <th>首页显示</th>
           <th>状态</th>
           <th>操作</th>
         </tr></thead>
@@ -130,12 +146,20 @@ usort($services, function($a,$b){
           <?php foreach($services as $s): ?>
             <tr data-id="<?=htmlspecialchars($s['id'])?>" draggable="true">
               <td><?=htmlspecialchars($s['id'])?></td>
-              <td><img src="<?=htmlspecialchars($s['icon'] ?: 'assets/sample/icon-placeholder.png')?>" class="thumb" id="icon-<?=htmlspecialchars($s['id'])?>"></td>
+              <td><img src="<?=htmlspecialchars($s['icon'] ?: 'favicon.ico')?>" class="thumb" id="icon-<?=htmlspecialchars($s['id'])?>"></td>
               <td><?=htmlspecialchars($s['name'])?></td>
               <td><?=htmlspecialchars($s['description'])?></td>
               <td class="mono"><?=htmlspecialchars($s['link_v6'])?></td>
               <td class="mono"><?=htmlspecialchars($s['link_v4'])?></td>
               <td class="mono"><?=htmlspecialchars($s['link_lan'])?></td>
+              <td>
+                <input
+                  type="checkbox"
+                  class="home-checkbox"
+                  data-id="<?=htmlspecialchars($s['id'])?>"
+                  <?=((($s['show_home'] ?? 0) == 1) ? 'checked' : '')?>
+                >
+              </td>
               <td>
                 <?php if (!empty($s['enabled'])): ?>
                   <span class="status-badge enabled" data-id="<?=htmlspecialchars($s['id'])?>">启用</span>
@@ -144,16 +168,24 @@ usort($services, function($a,$b){
                 <?php endif; ?>
               </td>
               <td>
-                <button class="edit-btn" data-id="<?=htmlspecialchars($s['id'])?>">编辑</button>
-                <button class="del-btn" data-id="<?=htmlspecialchars($s['id'])?>">删除</button>
-                <!-- 新增：获取图标 / 上传图标 -->
-                <button class="fetch-icon-btn" data-id="<?=htmlspecialchars($s['id'])?>">获取图标</button>
-                <button class="upload-icon-btn" data-id="<?=htmlspecialchars($s['id'])?>">上传图标</button>
+                <div class="action-group">
+                  <button class="edit-btn" data-id="<?=htmlspecialchars($s['id'])?>">编辑</button>
+                  <button class="del-btn" data-id="<?=htmlspecialchars($s['id'])?>">删除</button>
+                  <button class="fetch-icon-btn" data-id="<?=htmlspecialchars($s['id'])?>">获取图标</button>
+                  <button class="upload-icon-btn" data-id="<?=htmlspecialchars($s['id'])?>">上传图标</button>
+                </div>
               </td>
             </tr>
           <?php endforeach; ?>
         </tbody>
       </table>
+    </section>
+    <section class="admin-pagination-wrap">
+      <div class="admin-pagination">
+        <button id="admin-prev" class="admin-page-btn">上一页</button>
+        <span id="admin-page-info" class="admin-page-info"></span>
+        <button id="admin-next" class="admin-page-btn">下一页</button>
+      </div>
     </section>
   </main>
 
@@ -177,6 +209,7 @@ usort($services, function($a,$b){
           <div class="form-row"><label>局域网 链接 <input name="link_lan"></label></div>
 
           <div class="form-row"><label style="display: block;">启用 <input name="enabled" type="checkbox" checked></label></div>
+          <div class="form-row"><label style="display: block;">首页显示 <input name="show_home" type="checkbox" checked></label></div>
 
           <div class="form-actions">
             <button type="submit" class="primary">保存</button>

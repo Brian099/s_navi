@@ -54,7 +54,12 @@ usort($services, function($a,$b){
     if ($sa === $sb) return ($a['id'] ?? 0) <=> ($b['id'] ?? 0);
     return $sa <=> $sb;
 });
-$services = array_filter($services, function($s){ return ($s['enabled'] ?? 0) == 1; });
+$allServices = $services;
+$services = array_filter($services, function($s){
+    $enabled = ($s['enabled'] ?? 0) == 1;
+    $showHome = ($s['show_home'] ?? 0) == 1;
+    return $enabled && $showHome;
+});
 
 function getBodyCSS() {
     $uploadsDir = 'uploads/';
@@ -87,16 +92,37 @@ $bodyCSS = getBodyCSS();
   <meta charset="utf-8">
   <title><?=htmlspecialchars($serverName)?> - 导航</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/style.css?v=<?=filemtime(__DIR__.'/assets/style.css')?>">
 </head>
 <body style="<?php echo $bodyCSS; ?>">
   <div class="bg"></div>
 
-  <!-- 右上角单独一行的模式切换 -->
-  <div class="mode-top-right">
-    <button data-mode="v6" class="mode-btn">V6</button>
-    <button data-mode="v4" class="mode-btn">V4</button>
-    <button data-mode="lan" class="mode-btn">局域网</button>
+  <!-- 顶部悬浮导航层（滚动时带背景遮罩） -->
+  <div id="top-navbar" class="top-navbar">
+    <!-- 固定在左上角的服务器名称（页面向下滚动时显示） -->
+    <div id="sticky-header" class="mode-top-left">
+      <h2 class="sticky-server-name"><?=htmlspecialchars($serverName)?></h2>
+    </div>
+
+    <!-- 右上角组（搜索及模式切换） -->
+    <div class="mode-top-right">
+      <input id="nav-search" class="nav-search" type="search" placeholder="搜索服务…" autocomplete="off">
+      <button data-mode="v6" class="mode-btn">V6</button>
+      <button data-mode="v4" class="mode-btn">V4</button>
+      <button data-mode="lan" class="mode-btn">局域网</button>
+    </div>
+  </div>
+  <!-- 全局搜索弹窗 -->
+  <div id="search-modal-overlay" class="search-modal-overlay">
+    <div class="search-modal">
+      <div class="search-modal-top">
+        <input id="search-modal-input" class="search-modal-input" type="search" placeholder="输入关键词搜索服务..." autocomplete="off">
+        <div class="search-modal-tips">
+          <span class="search-modal-esc">ESC</span>
+        </div>
+      </div>
+      <div id="search-modal-results" class="nav-search-panel"></div>
+    </div>
   </div>
 
   <!-- 中间独立一行：服务器名称与时间（名称左，时间右两行显示） -->
@@ -115,7 +141,7 @@ $bodyCSS = getBodyCSS();
       <div class="grid">
         <?php foreach ($services as $s): ?>
           <?php
-            $icon = 'assets/sample/icon-placeholder.png';
+            $icon = 'favicon.ico';
             if (!empty($s['icon']) && (strpos($s['icon'],'http://') === 0 || strpos($s['icon'],'https://') === 0)) {
                 $icon = $s['icon'];
             } elseif (!empty($s['icon']) && file_exists(__DIR__ . '/' . $s['icon'])) {
@@ -141,6 +167,9 @@ $bodyCSS = getBodyCSS();
     <small>Powered by Simple-Nav • <a href="admin.php">管理</a></small>
   </footer>
 
-  <script src="assets/app.js"></script>
+  <script>
+    window.__NAV_ALL_SERVICES__ = <?=json_encode($allServices, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)?>;
+  </script>
+  <script src="assets/app.js?v=<?=filemtime(__DIR__.'/assets/app.js')?>"></script>
 </body>
 </html>

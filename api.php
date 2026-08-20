@@ -289,6 +289,7 @@ if ($action === 'save') {
     $link_v4 = trim($_POST['link_v4'] ?? '');
     $link_lan = trim($_POST['link_lan'] ?? '');
     $enabled = isset($_POST['enabled']) ? 1 : 0;
+    $show_home = isset($_POST['show_home']) ? 1 : 0;
 
     // 处理上传文件（如果有）
     $uploaded_icon_path = '';
@@ -321,6 +322,7 @@ if ($action === 'save') {
                 $services[$k]['link_v4'] = $link_v4;
                 $services[$k]['link_lan'] = $link_lan;
                 $services[$k]['enabled'] = $enabled;
+                $services[$k]['show_home'] = $show_home;
                 if ($uploaded_icon_path !== '') {
                     $services[$k]['icon'] = $uploaded_icon_path;
                 }
@@ -342,12 +344,64 @@ if ($action === 'save') {
             'link_v4' => $link_v4,
             'link_lan' => $link_lan,
             'sort_order' => $new_sort,
-            'enabled' => $enabled
+            'enabled' => $enabled,
+            'show_home' => $show_home
         ];
         $services[] = $new;
     }
 
     $ok = save_services($dataFile, $services);
+    echo json_encode(['ok'=>$ok]);
+    exit;
+}
+
+if ($action === 'layout') {
+    $input = file_get_contents('php://input');
+    $json = $input ? json_decode($input, true) : null;
+    if (!is_array($json) || !isset($json['layout']) || !is_array($json['layout'])) {
+        echo json_encode(['ok'=>false,'err'=>'未提供 layout 列表']); exit;
+    }
+
+    $layout = $json['layout'];
+    $orderIds = [];
+    $showMap = [];
+    foreach ($layout as $row) {
+        if (!is_array($row)) continue;
+        if (!isset($row['id'])) continue;
+        $id = (int)$row['id'];
+        if ($id <= 0) continue;
+        $orderIds[] = $id;
+        if (isset($row['show_home'])) $showMap[$id] = ((int)$row['show_home']) ? 1 : 0;
+    }
+    if (empty($orderIds)) {
+        echo json_encode(['ok'=>false,'err'=>'layout 为空']); exit;
+    }
+
+    $services = load_services($dataFile);
+    $byId = [];
+    foreach ($services as $k => $v) $byId[(int)($v['id'] ?? 0)] = $k;
+
+    $newServices = [];
+    $orderIndex = 1;
+    $usedIds = [];
+    foreach ($orderIds as $id) {
+        if (!isset($byId[$id])) continue;
+        $k = $byId[$id];
+        $services[$k]['sort_order'] = $orderIndex++;
+        if (isset($showMap[$id])) $services[$k]['show_home'] = $showMap[$id];
+        $newServices[] = $services[$k];
+        $usedIds[] = $id;
+    }
+
+    foreach ($services as $v) {
+        $vid = (int)($v['id'] ?? 0);
+        if (in_array($vid, $usedIds, true)) continue;
+        $v['sort_order'] = $orderIndex++;
+        if (isset($showMap[$vid])) $v['show_home'] = $showMap[$vid];
+        $newServices[] = $v;
+    }
+
+    $ok = save_services($dataFile, $newServices);
     echo json_encode(['ok'=>$ok]);
     exit;
 }
